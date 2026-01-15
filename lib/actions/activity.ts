@@ -1,6 +1,5 @@
 "use server"
 
-import { createAI } from "ai/rsc"
 import { openai } from "@ai-sdk/openai"
 import { generateObject } from "ai"
 import { z } from "zod"
