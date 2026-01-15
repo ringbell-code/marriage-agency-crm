@@ -1,31 +1,63 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { getMemberById } from "@/lib/actions/members"
 import { getActivityLogsByMemberId } from "@/lib/actions/activity-logs"
-import { notFound } from "next/navigation"
 import { MemberProfileCard } from "@/components/member-profile-card"
 import { ActivitySection } from "@/components/activity-section"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { Member, ActivityLog } from "@/lib/supabase"
+import { useParams } from "next/navigation"
 
-interface MemberPageProps {
-  params: Promise<{ id: string }>
-}
+export default function MemberPage() {
+  const params = useParams()
+  const id = params.id as string
+  const [member, setMember] = useState<Member | null>(null)
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-export default async function MemberPage({ params }: MemberPageProps) {
-  const { id } = await params
-  const member = await getMemberById(id)
-
-  if (!member) {
-    notFound()
+  const fetchData = async () => {
+    setIsLoading(true)
+    const memberData = await getMemberById(id)
+    const logsData = await getActivityLogsByMemberId(id)
+    
+    setMember(memberData)
+    setActivityLogs(logsData)
+    setIsLoading(false)
   }
 
-  const activityLogs = await getActivityLogsByMemberId(id)
+  useEffect(() => {
+    fetchData()
+  }, [id, refreshKey])
+
+  const handleDataUpdate = () => {
+    setRefreshKey(prev => prev + 1)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-600">読み込み中...</div>
+      </div>
+    )
+  }
+
+  if (!member) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-600">会員が見つかりませんでした</div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild className="hover:bg-gray-100">
-          <Link href="/">
+          <Link href="/members">
             <ArrowLeft className="h-5 w-5 text-gray-700" />
           </Link>
         </Button>
@@ -37,11 +69,11 @@ export default async function MemberPage({ params }: MemberPageProps) {
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-1">
-          <MemberProfileCard member={member} />
+          <MemberProfileCard member={member} key={refreshKey} />
         </div>
 
         <div className="md:col-span-2">
-          <ActivitySection memberId={id} logs={activityLogs} />
+          <ActivitySection memberId={id} logs={activityLogs} onUpdate={handleDataUpdate} />
         </div>
       </div>
     </div>

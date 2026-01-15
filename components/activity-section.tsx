@@ -21,6 +21,7 @@ import { ja } from "date-fns/locale"
 interface ActivitySectionProps {
   memberId: string
   logs: ActivityLog[]
+  onUpdate?: () => void
 }
 
 const typeIcons = {
@@ -47,7 +48,7 @@ const sentimentLabels = {
   negative: "ネガティブ",
 }
 
-export function ActivitySection({ memberId, logs }: ActivitySectionProps) {
+export function ActivitySection({ memberId, logs, onUpdate }: ActivitySectionProps) {
   const router = useRouter()
   const [text, setText] = useState("")
   const [type, setType] = useState("meeting")
@@ -88,6 +89,10 @@ export function ActivitySection({ memberId, logs }: ActivitySectionProps) {
       if (result.success) {
         setText("")
         setAnalysisResult(null)
+        // 親コンポーネントに更新を通知（即時反映）
+        if (onUpdate) {
+          onUpdate()
+        }
         router.refresh()
       } else {
         alert(`エラー: ${result.error}`)
